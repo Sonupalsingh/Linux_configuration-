@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Variables
+TOMCAT_VERSION="9.0.64"
+TOMCAT_USER="admin"
+TOMCAT_PASSWORD="sonupalsing"
+SERVER_IP="25.0.0.13"
+JAVA_PACKAGE="java-11-openjdk java-11-openjdk-devel"
+INSTALL_DIR="/usr/share"
+TOMCAT_DIR="$INSTALL_DIR/tomcat"
+TOMCAT_ARCHIVE="apache-tomcat-${TOMCAT_VERSION}.tar.gz"
+TOMCAT_URL="https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/${TOMCAT_ARCHIVE}"
+
+# Install Java
+sudo yum -y install $JAVA_PACKAGE
+
+# Verify Java installation
+java -version || { echo "Java installation failed!"; exit 1; }
+
+# Create Tomcat user and group
+sudo groupadd --system tomcat
+sudo useradd -d $TOMCAT_DIR -r -s /bin/false -g tomcat tomcat
+
+# Download and extract Tomcat
+sudo yum -y install wget
+cd /tmp
+wget $TOMCAT_URL
+sudo tar xvf $TOMCAT_ARCHIVE -C $INSTALL_DIR
+sudo ln -s ${INSTALL_DIR}/apache-tomcat-${TOMCAT_VERSION} $TOMCAT_DIR
+
+# Set permissions
+sudo chown -R tomcat:tomcat $TOMCAT_DIR
+sudo chown -R tomcat:tomcat ${INSTALL_DIR}/apache-tomcat-${TOMCAT_VERSION}
+
+# Create systemd service file
+cat <<EOF | sudo tee /etc/systemd/system/tomcat.service
+[Unit]
+Description=Tomcat
+After=syslog.target network.target
+
+[Service]
+Type=forking
+User=tomcat
+Group=tomcat
+Environment=JAVA_HOME=/usr/lib/jvm/jre-openjdk
+Environment='JAVA_OPTS=-Djava.awt.headless=true'
+Environment=CATALINA_HOME=$TOMCAT_DIR
+Environment=CATALINA_BASE=$TOMCAT_DIR
+Environment=CATALINA_PID=$TOMCAT_DIR/temp/tomcat.pid
+ExecStart=$TOMCAT_DIR/bin/catalina.sh start
+ExecStop=$TOMCAT_DIR/bin/catalina.sh stop
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd, start and enable Tomcat
+sudo systemctl daemon-reload
+sudo systemctl start tomcat
+sudo systemctl enable tomcat
+
+# Configure firewall
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --reload
+
+# Configure Tomcat users
+sudo sed -i "/<\/tomcat-users>/i \
+  <role rolename=\"manager-gui\"/>\n  <role rolename=\"admin-gui\"/>\n  <user username=\"$TOMCAT_USER\" password=\"$TOMCAT_PASSWORD\" roles=\"manager-gui,admin-gui\"/>" $TOMCAT_DIR/conf/tomcat-users.xml
+
+# Configure access in context.xml for manager and host-manager
+for APP in manager host-manager; do
+  sudo sed -i "s/<Valve className=\"org.apache.catalina.valves.RemoteAddrValve\" allow=.*>/<Valve className=\"org.apache.catalina.valves.RemoteAddrValve\" allow=\"127\\.\\.*|::1|0:0:0:0:0:0:0:1|$SERVER_IP\" \/>/" $TOMCAT_DIR/webapps/$APP/META-INF/context.xml
+done
+
+# Restart Tomcat
+sudo systemctl restart tomcat
+
+# Output status
+sudo systemctl status tomcat
+
+echo "Tomcat installation and configuration completed successfully."
+echo "Access the Tomcat Manager at http://$SERVER_IP:8080/manager/html with username '$TOMCAT_USER' and password '$TOMCAT_PASSWORD'."
