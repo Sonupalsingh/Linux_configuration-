@@ -1,0 +1,142 @@
+Sure! Here are all the steps to install and configure Elasticsearch and Kibana on RHEL 9:
+
+### Step 1: Install Java
+Elasticsearch requires Java. Ensure Java is installed on your system.
+
+```sh
+sudo dnf install java-11-openjdk-devel
+```
+
+### Step 2: Install Elasticsearch
+1. Download the Elasticsearch RPM package.
+
+    ```sh
+    wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.15.2-x86_64.rpm
+    ```
+   
+2. Install the Elasticsearch RPM package.
+
+    ```sh
+    sudo rpm --install elasticsearch-7.15.2-x86_64.rpm
+    ```
+
+### Step 3: Configure Elasticsearch
+Edit the Elasticsearch configuration file to set up your cluster.
+
+```sh
+sudo vim /etc/elasticsearch/elasticsearch.yml
+```
+
+Example configuration:
+```yaml
+cluster.name: my-cluster
+node.name: node-1
+network.host: 0.0.0.0
+http.port: 9200
+```
+
+### Step 4: Start and Enable Elasticsearch Service
+1. Start the Elasticsearch service.
+
+    ```sh
+    sudo systemctl start elasticsearch
+    ```
+
+2. Enable Elasticsearch to start on boot.
+
+    ```sh
+    sudo systemctl enable elasticsearch
+    ```
+
+3. Check the status of Elasticsearch service.
+
+    ```sh
+    sudo systemctl status elasticsearch
+    ```
+
+### Step 5: Allow Elasticsearch Port through Firewall
+1. Allow the port 9200.
+
+    ```sh
+    sudo firewall-cmd --add-port=9200/tcp --permanent
+    ```
+
+2. Reload the firewall rules.
+
+    ```sh
+    sudo firewall-cmd --reload
+    ```
+
+### Step 6: Verify Elasticsearch Installation
+Send a request to the Elasticsearch HTTP endpoint to verify it is running.
+
+```sh
+curl -X GET "localhost:9200/"
+```
+
+### Step 7: Install Kibana
+Install Kibana using Yum.
+
+```sh
+sudo yum install kibana
+```
+
+### Step 8: Configure Kibana
+Edit the Kibana configuration file.
+
+```sh
+sudo vim /etc/kibana/kibana.yml
+```
+
+Example configuration:
+```yaml
+server.port: 5601
+server.host: "0.0.0.0"
+```
+
+### Step 9: Start and Enable Kibana Service
+1. Start the Kibana service.
+
+    ```sh
+    sudo systemctl start kibana
+    ```
+
+2. Enable Kibana to start on boot.
+
+    ```sh
+    sudo systemctl enable kibana
+    ```
+
+3. Check the status of Kibana service.
+
+    ```sh
+    sudo systemctl status kibana
+    ```
+
+### Step 10: Allow Kibana Port through Firewall
+1. Allow the port 5601.
+
+    ```sh
+    sudo firewall-cmd --add-port=5601/tcp --permanent
+    ```
+
+2. Reload the firewall rules.
+
+    ```sh
+    sudo firewall-cmd --reload
+    ```
+
+### Step 11: Verify Kibana Installation
+1. Tail the Kibana logs to check for any issues.
+
+    ```sh
+    sudo tail -f /var/log/kibana/kibana.log
+    ```
+
+2. Test Kibana access.
+
+    ```sh
+    curl http://localhost:5601
+    ```
+
+Following these steps will set up Elasticsearch and Kibana on your RHEL 9 system. If you encounter any issues, check the logs for Elasticsearch and Kibana to diagnose and resolve them.
