@@ -1,0 +1,94 @@
+###############NGINX__LoadBlancer######
+
+
+##Update the system:
+
+
+sudo yum update -y
+#Install EPEL repository (required for NGINX on CentOS):
+
+sudo yum install epel-release -y
+#Install NGINX:
+
+
+sudo yum install nginx -y
+###Start and enable NGINX service:
+
+
+sudo systemctl start nginx
+sudo systemctl enable nginx
+##Check the status of NGINX:
+
+
+sudo systemctl status nginx
+###Verify NGINX installation: Open a browser and visit http://<your_server_ip>. You should see the default NGINX welcome page.
+
+####Step 2: Configure NGINX as a Load Balancer
+###Create a backup of the current NGINX configuration:
+
+
+sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.backup
+####Edit the NGINX configuration file: Open the configuration file for editing.
+
+
+sudo vim /etc/nginx/nginx.conf
+##Add an upstream block for the backend servers: In the http block of the file, define the backend servers you want to load balance. Here's an example:
+
+##nginx
+
+http {
+    upstream backend {
+        server 192.168.1.101;  # Backend Server 1
+        server 192.168.1.102;  # Backend Server 2
+        # Add more backend servers as needed
+    }
+
+    server {
+        listen 80;
+        
+        location / {
+            proxy_pass http://backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+}
+
+
+##upstream backend: This section defines the backend servers.
+##proxy_pass: Forwards requests to the backend servers.
+##Save and exit (Ctrl + X, then Y to confirm and Enter).
+
+##Step 3: Test the NGINX Configuration
+##Test the NGINX configuration:
+
+
+sudo nginx -t
+##If the configuration is correct, you should see:
+
+
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+##Restart NGINX to apply the changes:
+
+
+sudo systemctl restart nginx
+
+##Step 4: Verify the Load Balancer
+##Check if the load balancer is working: Open your browser and visit http://<nginx_server_ip>. Refresh the page several times to ensure the request is being distributed between the backend servers.
+
+##Check NGINX access logs to verify distribution of requests:
+
+sudo tail -f /var/log/nginx/access.log
+
+
+
+###Step 5: (Optional) Install SSL (HTTPS)
+##Install Certbot and the NGINX plugin:
+
+
+sudo yum install certbot python3-certbot-nginx -y
+##Obtain an SSL certificate for your domain:
+
+sudo certbot --nginx
