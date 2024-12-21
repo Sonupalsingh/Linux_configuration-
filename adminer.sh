@@ -18,8 +18,12 @@ sudo systemctl restart httpd
 
 ##Step 4: Download Adminer
 sudo mkdir -p /var/www/html/adminer
-sudo curl -o /var/www/html/adminer/index.php https://github.com/vrana/adminer/releases/download/v4.8.1/adminer-4.8.1.php
+#sudo curl -o /var/www/html/adminer/index.php 
+##sudo mkdir /var/www/html/adminer
+sudo wget https://github.com/vrana/adminer/releases/download/v4.8.1/adminer-4.8.1.php
+sudo mv  adminer-4.8.1.php  /var/www/html/adminer/index.php
 
+##https://github.com/vrana/adminer/releases/download/v4.8.1/adminer-4.8.1.php
 
 ##Step 5: Adjust Permissions
 sudo chown -R apache:apache /var/www/html/adminer
