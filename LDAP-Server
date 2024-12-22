@@ -2,28 +2,30 @@
 
 
 sudo dnf install -y openldap-servers openldap-clients
-    7   dnf install -y openldap-servers openldap-clients
-    8   yum  install openldap-servers openldap-clients -y
-    9  yum clean all
-   10  yum repolist all 
-   11  yum install epel-release -y
-   12   yum  install openldap-servers openldap-clients -y
-   13  sudo systemctl enable --now slapd
-   14  sudo slappasswd
-   15  vi ldap.ldif
-   16  sudo chown -R ldap:ldap /etc/openldap/slapd.d
-   17  sudo chmod -R 700 /etc/openldap/slapd.d
-   18  sudo systemctl restart slapd
-   19  vi mainldap.ldif
-   20  sudo ldapadd -Y EXTERNAL -H ldapi:/// -f base.ldif
-   21  sudo ldapadd -Y EXTERNAL -H ldapi:/// -f mainldap.ldif
-   22  sudo firewall-cmd --add-service=ldap --permanent
-   23  sudo firewall-cmd --reload
-######################################################################################
-Install LDAP Server Packages
-Update the system and install the necessary packages:
+dnf install -y openldap-servers openldap-clients
+ yum  install openldap-servers openldap-clients -y
+ yum clean all
+yum repolist all 
+yum install epel-release -y
+ yum  install openldap-servers openldap-clients -y
+ sudo systemctl enable --now slapd
+ sudo slappasswd
+vi ldap.ldif
+sudo chown -R ldap:ldap /etc/openldap/slapd.d
+sudo chmod -R 700 /etc/openldap/slapd.d
+sudo systemctl restart slapd
+vi mainldap.ldif
+sudo ldapadd -Y EXTERNAL -H ldapi:/// -f base.ldif
+sudo ldapadd -Y EXTERNAL -H ldapi:/// -f mainldap.ldif
+sudo firewall-cmd --add-service=ldap --permanent
+sudo firewall-cmd --reload
 
-sh
+
+######################################################################################
+##Install LDAP Server Packages
+###Update the system and install the necessary packages:
+
+
 sudo dnf update -y
 sudo dnf install -y openldap-servers openldap-clients
 Public code references from 1 repository
