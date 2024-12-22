@@ -1,0 +1,70 @@
+######Server Network Bounding ########
+
+
+###Install the Bonding Driver
+
+modprobe bonding
+
+###You can also add it to /etc/modules-load.d/ to ensure it loads on boot.
+
+
+##Create a bond interface  /etc/sysconfig/network-scripts/ifcfg-bond0
+
+
+# /etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+BONDING_MASTER=yes
+BOOTPROTO=static
+ONBOOT=yes
+IPADDR=192.168.1.100
+NETMASK=255.255.255.0
+GATEWAY=192.168.1.1
+BONDING_OPTS="mode=1 miimon=100"
+
+
+##mode=1: Specifies Active-Backup mode, where one interface is active and the other is a backup.
+##miimon=100: Monitors the link status every 100 ms.
+
+###Configure the Slave Interfaces (eth0, eth1, etc.):
+
+# /etc/sysconfig/network-scripts/ifcfg-eth0
+DEVICE=eth0
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+BOOTPROTO=none
+
+
+
+# /etc/sysconfig/network-scripts/ifcfg-eth1
+DEVICE=eth1
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+BOOTPROTO=none
+
+##Restart Networking Service
+systemctl restart network
+
+
+ifdown eth0 && ifdown eth1 && ifup bond0
+
+
+###Restart Networking Service
+
+cat /proc/net/bonding/bond0
+
+
+####Optional: Configure Other Bonding Modes
+#####The BONDING_OPTS can be adjusted depending on your needs. Some of the bonding modes include:
+
+###mode=0 (balance-rr): Round-robin policy, packets are transmitted in sequential order.
+##mode=1 (active-backup): One interface is active, and the other is a backup.
+##mode=2 (balance-xor): Transmit based on the XOR of MAC address.
+##mode=3 (broadcast): Transmit every packet on all slave interfaces.
+##mode=4 (802.3ad): LACP (Link Aggregation Control Protocol) for dynamic link aggregation.
+##mode=5 (balance-tlb): Adaptive transmit load balancing.
+##mode=6 (balance-alb): Adaptive load balancing (includes receive load balancing).
+
+
+
