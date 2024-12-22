@@ -1,0 +1,145 @@
+######3node cluster with nfs
+
+
+yum install nfs* -y
+
+##nfs-utils
+##nfsv4-client-utils
+##nfs-utils-coreos  
+### nfs4-acl-tools  
+## nfsv4-client-utils
+
+
+
+echo "/data *(rw)" | sudo tee -a /etc/exports
+
+sudo exportfs -r
+
+
+###Start the NFS Service Ensure that the NFS service is running:
+sudo systemctl start nfs-server
+sudo systemctl enable nfs-server
+
+##Check the NFS Exports To verify that the share is correctly exported, use:
+sudo exportfs -v
+
+###Allow NFS Ports in Firewall
+sudo firewall-cmd --permanent --add-service=nfs
+sudo firewall-cmd --permanent --add-service=mountd
+sudo firewall-cmd --permanent --add-service=rpc-bind
+sudo firewall-cmd --reload
+
+
+
+
+####################nginx loadblancer ############
+
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+# Load dynamic modules
+include /usr/share/nginx/modules/*.conf;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   65;
+    types_hash_max_size 4096;
+
+    include             /etc/nginx/mime.types;
+    default_type        application/octet-stream;
+
+    # Load modular configuration files from the /etc/nginx/conf.d directory
+    include /etc/nginx/conf.d/*.conf;
+
+    # Define upstream backend servers for load balancing
+    upstream backend_servers {
+        # Define backend servers for load balancing
+        server 192.168.1.24;  # First backend server
+        server 192.168.1.25;  # Second backend server
+
+        # Optional: configure load balancing algorithm
+        # least_conn;  # Uncomment this to use least connections
+        # ip_hash;     # Uncomment this to ensure session persistence
+    }
+
+    # Default server block for HTTP requests
+    server {
+        listen       80;
+        listen       [::]:80;
+        server_name  _;
+
+        # Root directory for the server
+        root         /usr/share/nginx/html;
+
+        # Load configuration files for the default server block
+        include /etc/nginx/default.d/*.conf;
+
+        # Main location block to forward requests to backend servers
+        location / {
+            proxy_pass http://backend_servers;  # Forward requests to the upstream group
+            proxy_set_header Host $host;  # Pass the original host header to the backend
+            proxy_set_header X-Real-IP $remote_addr;  # Pass the real client IP
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;  # Forward the client IP
+            proxy_set_header X-Forwarded-Proto $scheme;  # Pass the protocol (http or https)
+        }
+
+        # Error handling
+        error_page 404 /404.html;
+        location = /404.html {
+        }
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+        }
+    }
+
+}  # Close the 'http' block here
+
+
+
+
+getenforce 
+setenforce 0
+#####NfS server client ####
+
+sudo yum install -y nfs-utils
+
+sudo mkdir -p /var/www/html
+
+sudo mount <server-ip>:/data /var/www/html
+
+df -h
+
+
+
+echo "192.168.1.22:/data /var/www/html nfs defaults 0 0" | tee -a /etc/fstab
+
+
+getenforce 
+setenforce 0
+getenforce 
+
+
+
+ 
+
+
+
+
+
+
+
