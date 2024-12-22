@@ -1,0 +1,125 @@
+###following link:= https://www.server-world.info/en/note?os=CentOS_Stream_9&p=pxe&f=4
+
+
+sudo dnf install -y openldap-servers openldap-clients
+    7   dnf install -y openldap-servers openldap-clients
+    8   yum  install openldap-servers openldap-clients -y
+    9  yum clean all
+   10  yum repolist all 
+   11  yum install epel-release -y
+   12   yum  install openldap-servers openldap-clients -y
+   13  sudo systemctl enable --now slapd
+   14  sudo slappasswd
+   15  vi ldap.ldif
+   16  sudo chown -R ldap:ldap /etc/openldap/slapd.d
+   17  sudo chmod -R 700 /etc/openldap/slapd.d
+   18  sudo systemctl restart slapd
+   19  vi mainldap.ldif
+   20  sudo ldapadd -Y EXTERNAL -H ldapi:/// -f base.ldif
+   21  sudo ldapadd -Y EXTERNAL -H ldapi:/// -f mainldap.ldif
+   22  sudo firewall-cmd --add-service=ldap --permanent
+   23  sudo firewall-cmd --reload
+######################################################################################
+Install LDAP Server Packages
+Update the system and install the necessary packages:
+
+sh
+sudo dnf update -y
+sudo dnf install -y openldap-servers openldap-clients
+Public code references from 1 repository
+Enable and start the LDAP service:
+
+sudo systemctl enable --now slapd
+Public code references from 1 repository
+Set the LDAP admin password:
+
+sudo slappasswd
+Public code references from 1 repository
+This command will prompt you to enter and confirm the password, and it will return an encrypted password. Save this encrypted password, as you will need it in the next steps.
+
+Step 2: Configure LDAP Server
+Create the initial configuration file:
+
+sh
+sudo tee /etc/openldap/slapd.d/cn=config/olcDatabase={2}hdb.ldif <<EOF
+dn: olcDatabase={2}hdb,cn=config
+changetype: modify
+replace: olcSuffix
+olcSuffix: dc=example,dc=com
+
+dn: olcDatabase={2}hdb,cn=config
+changetype: modify
+replace: olcRootDN
+olcRootDN: cn=admin,dc=example,dc=com
+
+dn: olcDatabase={2}hdb,cn=config
+changetype: modify
+add: olcRootPW
+olcRootPW: {ENCRYPTED_PASSWORD} # Replace with the encrypted password
+EOF
+Public code references from 1 repository
+github.com/skylens/mynoteslicense unknown
+Set the correct permissions:
+
+sh
+sudo chown -R ldap:ldap /etc/openldap/slapd.d
+sudo chmod -R 700 /etc/openldap/slapd.d
+Public code references from 1 repository
+Restart the LDAP service:
+
+sudo systemctl restart slapd
+Public code references from 1 repository
+Step 3: Populate LDAP Directory
+Create the base LDAP structure:
+
+sh
+sudo tee base.ldif <<EOF
+dn: dc=example,dc=com
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: Example Organization
+dc: example
+
+dn: cn=admin,dc=example,dc=com
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: admin
+description: Directory Manager
+userPassword: {ENCRYPTED_PASSWORD} # Replace with the encrypted password
+EOF
+Public code references from 1 repository
+Add the base structure to the LDAP directory:
+
+sudo ldapadd -Y EXTERNAL -H ldapi:/// -f base.ldif
+Public code references from 1 repository
+Step 4: Configure Firewall
+Allow LDAP service through the firewall:
+
+sh
+sudo firewall-cmd --add-service=ldap --permanent
+sudo firewall-cmd --reload
+Public code references from 1 repository
+Step 5: Configure LDAP Client
+Install necessary packages on the client machine:
+
+sudo dnf install -y openldap-clients nss-pam-ldapd
+Public code references from 1 repository
+Configure LDAP client settings:
+
+sudo authconfig --enableldap --enableldapauth --ldapserver=192.168.1.28 --ldapbasedn="dc=example,dc=com" --enablemkhomedir --update
+Public code references from 1 repository
+Restart the necessary services:
+
+sh
+sudo systemctl restart nslcd
+sudo systemctl restart nscd
+Public code references from 1 repository
+Step 6: Verify LDAP Configuration
+Check if you can search the LDAP directory from the client machine:
+
+ldapsearch -x -H ldap://192.168.1.28 -b dc=example,dc=com -D "cn=admin,dc=example,dc=com" -w [admin_password]
+Public code references from 1 repository
+Replace [admin_password] with the actual password you set for the LDAP admin.
+
+By following these steps, you should have a basic LDAP server set up on CentOS 9 and a client configured to communicate with it. Make sure to replace placeholders with actual values where necessary. For more advanced configurations, refer to the official OpenLDAP documentation.
